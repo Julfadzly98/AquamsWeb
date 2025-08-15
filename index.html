@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Google Sheet Live Dashboard</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f5f7fa;
+      margin: 0;
+      padding: 0;
+    }
+    header {
+      text-align: center;
+      background: #0077b6;
+      color: white;
+      padding: 20px;
+    }
+    h1 {
+      margin: 0;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+      gap: 20px;
+      padding: 20px;
+    }
+    .chart-card {
+      background: white;
+      padding: 15px;
+      border-radius: 10px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Air Quality Dashboard</h1>
+    <p>Live Data from Google Sheets</p>
+  </header>
+
+  <div class="grid">
+    <div class="chart-card"><canvas id="tempChart"></canvas></div>
+    <div class="chart-card"><canvas id="humidityChart"></canvas></div>
+    <div class="chart-card"><canvas id="no2Chart"></canvas></div>
+    <div class="chart-card"><canvas id="so2Chart"></canvas></div>
+    <div class="chart-card"><canvas id="coChart"></canvas></div>
+    <div class="chart-card"><canvas id="o3Chart"></canvas></div>
+    <div class="chart-card"><canvas id="pm25Chart"></canvas></div>
+    <div class="chart-card"><canvas id="pm10Chart"></canvas></div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script>
+    const sheetUrl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTu8HL8Pj0iY1tK4YbSF3rIxh61-AFe9s2ZWufXpXVzWuRBP7_5ie4dIJ4Z7sBXlnCoThkRsUZjCtgr/pub?gid=488901893&single=true&output=csv";
+
+    async function fetchSheetData() {
+      const response = await fetch(sheetUrl);
+      const csvText = await response.text();
+      const rows = csvText.trim().split("\n").map(row => row.split(","));
+
+      const timestamps = [];
+      const temp = [];
+      const no2 = [];
+      const co = [];
+      const so2 = [];
+      const o3 = [];
+      const humidity = [];
+      const pm25 = [];
+      const pm10 = [];
+
+      for (let i = 1; i < rows.length; i++) {
+        timestamps.push(rows[i][0]);        // Timestamp
+        temp.push(parseFloat(rows[i][1]));  // temp
+        no2.push(parseFloat(rows[i][2]));   // no2
+        co.push(parseFloat(rows[i][3]));    // co
+        so2.push(parseFloat(rows[i][4]));   // so2
+        o3.push(parseFloat(rows[i][5]));    // O3
+        humidity.push(parseFloat(rows[i][6])); // humidity
+        pm25.push(parseFloat(rows[i][7]));  // Pm2.5
+        pm10.push(parseFloat(rows[i][8]));  // Pm10
+      }
+
+      renderChart("tempChart", "Temperature (°C)", timestamps, temp, "red");
+      renderChart("humidityChart", "Humidity (%)", timestamps, humidity, "blue");
+      renderChart("no2Chart", "NO₂ (ppb)", timestamps, no2, "orange");
+      renderChart("so2Chart", "SO₂ (ppb)", timestamps, so2, "purple");
+      renderChart("coChart", "CO (ppm)", timestamps, co, "brown");
+      renderChart("o3Chart", "O₃ (ppb)", timestamps, o3, "green");
+      renderChart("pm25Chart", "PM2.5 (µg/m³)", timestamps, pm25, "gray");
+      renderChart("pm10Chart", "PM10 (µg/m³)", timestamps, pm10, "black");
+    }
+
+    function renderChart(id, label, labels, data, color) {
+      new Chart(document.getElementById(id), {
+        type: "line",
+        data: {
+          labels: labels,
+          datasets: [{
+            label: label,
+            data: data,
+            borderColor: color,
+            backgroundColor: color + "55",
+            fill: true,
+            tension: 0.3
+          }]
+        },
+        options: {
+          responsive: true,
+          plugins: {
+            legend: { display: true }
+          },
+          scales: {
+            x: { display: false }
+          }
+        }
+      });
+    }
+
+    fetchSheetData();
+  </script>
+</body>
+</html>
